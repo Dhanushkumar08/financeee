@@ -405,22 +405,114 @@ function renderWealthNetWorth() {
     const ta = TA(), tl = TL(), nw = NW();
     const sub = document.getElementById('wealth-sub-text');
     if (sub && wealthCurTab === 'networth') sub.textContent = 'Net Worth · ' + fmt(nw);
-    document.getElementById('w-nw-val').textContent = fmt(nw);
-    document.getElementById('w-nw-val').className = 'nw-hero-val ' + (nw >= 0 ? '' : 'neg');
-    document.getElementById('w-nw-a').textContent = fmt(ta);
-    document.getElementById('w-nw-l').textContent = fmt(tl);
+    
+    const vEl = document.getElementById('w-nw-val');
+    if (vEl) {
+        vEl.textContent = fmt(nw);
+        vEl.className = 'nw-hero-val ' + (nw >= 0 ? '' : 'neg');
+    }
+    const aEl = document.getElementById('w-nw-a'); if (aEl) aEl.textContent = fmt(ta);
+    const lEl = document.getElementById('w-nw-l'); if (lEl) lEl.textContent = fmt(tl);
+    
     const sc = db.snapshots.length;
-    document.getElementById('w-nw-msg').innerHTML = sc ? `${sc} snapshot${sc > 1 ? 's' : ''} taken` : 'Take a snapshot to track your wealth over time.';
+    const msgEl = document.getElementById('w-nw-msg');
+    if (msgEl) {
+        msgEl.innerHTML = sc ? `${sc} snapshot${sc > 1 ? 's' : ''} taken` : 'Take a snapshot to track your wealth over time.';
+    }
+
     // Chart
     renderWealthNWChart();
-    // Milestones
-    const nwMs = [{ n: '₹10L', t: 1e6, ic: '🌱' }, { n: '₹25L', t: 25e5, ic: '🌿' }, { n: '₹50L', t: 5e6, ic: '🌳' }, { n: '₹1Cr', t: 1e7, ic: '🏆' }, { n: '₹2Cr', t: 2e7, ic: '💎' }, { n: '₹5Cr', t: 5e7, ic: '👑' }];
-    document.getElementById('w-nw-ms').innerHTML = nwMs.map(m => { const done = nw >= m.t, pp = Math.min(100, Math.round(nw / m.t * 100)); return `<div class="ms"><div class="msic">${m.ic}</div><div style="flex:1"><div class="msn" style="${done ? 'text-decoration:line-through;color:var(--text3)' : ''}">${m.n}</div>${!done ? `<div class="pb mt8" style="height:3px"><div class="pf" style="width:${pp}%;background:${pp > 50 ? '#22d3a0' : '#7c5cfc'}"></div></div>` : ''}</div><span class="bdg ${done ? 'bg' : 'by'}">${done ? '✓' : pp + '%'}</span></div>`; }).join('');
+
+    // Smart Suggestions
+    const sugCont = document.getElementById('w-nw-suggestions');
+    const sugCard = document.getElementById('w-nw-suggestions-card');
+    if (sugCont && sugCard) {
+        const suggestions = [];
+        const monthlyExp = typeof mExp === 'function' ? mExp() : 0;
+        const liquidAssets = db.assets.filter(a => ['Cash/Bank', 'Debt/FD'].includes(a.assetClass)).reduce((s, a) => s + (+a.value || 0), 0);
+        const eFundTarget = (db.settings.emergencyMonths || 6) * monthlyExp;
+
+        if (liquidAssets < eFundTarget && eFundTarget > 0) {
+            suggestions.push({ t: 'Emergency Fund', d: `You need ${fmt(eFundTarget - liquidAssets)} more to reach your ${db.settings.emergencyMonths || 6}-month safety net.`, ic: '🛡️', c: '#fbbf24' });
+        }
+        if (!db.settings.termInsurance) {
+            suggestions.push({ t: 'Protection Gap', d: 'Your profile doesn\'t show Term Insurance. It\'s the foundation of a solid plan.', ic: '☂️', c: '#7c5cfc' });
+        }
+        if (tl > 0 && ta > 0 && (tl / ta) > 0.4) {
+            suggestions.push({ t: 'Debt Watch', d: `Your debt-to-asset ratio is ${(tl / ta * 100).toFixed(0)}%. Consider reducing high-ROI loans first.`, ic: '⚠️', c: '#f87171' });
+        }
+        const bc = {}; db.assets.forEach(a => { bc[a.assetClass] = (bc[a.assetClass] || 0) + (+a.value || 0); });
+        const equity = (bc['Equity'] || 0) + (bc['Mutual Funds'] || 0);
+        if (ta > 0 && (equity / ta) < 0.2 && nw > 5e5) {
+            suggestions.push({ t: 'Wealth Growth', d: 'Low equity exposure might slow down long-term compounding. Consider a Diversified Index SIP.', ic: '📈', c: '#22d3a0' });
+        }
+
+        if (suggestions.length > 0) {
+            sugCard.style.display = 'block';
+            sugCont.innerHTML = suggestions.map(s => `<div style="display:flex;gap:12px;padding:12px;background:var(--bg2);border-radius:10px;border-left:4px solid ${s.c}">
+                <div style="font-size:18px">${s.ic}</div>
+                <div>
+                    <div style="font-weight:700;font-size:12px;margin-bottom:2px;color:var(--text);">${s.t}</div>
+                    <div style="font-size:10px;color:var(--text3);line-height:1.4">${s.d}</div>
+                </div>
+            </div>`).join('');
+        } else {
+            sugCard.style.display = 'none';
+        }
+    }
+
+    // Dynamic Milestones
+    const allMs = [
+        { n: '₹1L NW', t: 1e5, ic: '🌱' }, { n: '₹5L NW', t: 5e5, ic: '🌿' },
+        { n: '₹10L NW', t: 1e6, ic: '☘️' }, { n: '₹25L NW', t: 25e5, ic: '🌳' },
+        { n: '₹50L NW', t: 5e6, ic: '⛰️' }, { n: '₹75L NW', t: 75e5, ic: '🚀' },
+        { n: '₹1Cr NW', t: 1e7, ic: '🏆' }, { n: '₹2.5Cr NW', t: 25e6, ic: '💎' },
+        { n: '₹5Cr NW', t: 5e7, ic: '👑' }, { n: '₹10Cr NW', t: 1e8, ic: '🌌' }
+    ];
+    const doneIdx = allMs.map((m, i) => nw >= m.t ? i : -1).filter(i => i !== -1);
+    const lastDone = doneIdx.length > 0 ? doneIdx[doneIdx.length - 1] : -1;
+    const startIndex = Math.max(0, lastDone - 1);
+    const nwMs = allMs.slice(startIndex, startIndex + 4);
+
+    const msEl = document.getElementById('w-nw-ms');
+    if (msEl) {
+        msEl.innerHTML = nwMs.map(m => {
+            const done = nw >= m.t, pp = Math.min(100, Math.round(nw / m.t * 100));
+            return `<div class="ms">
+                <div class="msic">${m.ic}</div>
+                <div style="flex:1">
+                    <div class="msn" style="${done ? 'text-decoration:line-through;color:var(--text3)' : ''}">${m.n}</div>
+                    ${!done ? `<div class="pb mt8" style="height:3px"><div class="pf" style="width:${pp}%;background:${pp > 50 ? '#22d3a0' : '#7c5cfc'}"></div></div>` : ''}
+                </div>
+                <span class="bdg ${done ? 'bg' : 'by'}">${done ? '✓' : pp + '%'}</span>
+            </div>`;
+        }).join('');
+    }
+
     // Snapshot history
     const sorted = [...db.snapshots].sort((a, b) => b.date - a.date);
-    document.getElementById('w-nw-snaps').innerHTML = sorted.length
-        ? sorted.map((s, i) => { const prev = sorted[i + 1]; const diff = prev ? s.netWorth - prev.netWorth : null; return `<div class="snap-card"><div class="snap-card-top"><div><div class="snap-card-date">${new Date(s.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</div><div class="snap-card-sub">${s.assetCount || 0} assets · ${fmt(s.totalAssets || 0)}</div></div><div><div class="snap-card-nw ${s.netWorth >= 0 ? 'tgn' : 'trd'}">${fmt(s.netWorth)}</div>${diff != null ? `<div style="font-size:10px;color:${diff >= 0 ? 'var(--gn)' : 'var(--rd)'}">${diff >= 0 ? '▲ +' : '▼ '}${fmt(Math.abs(diff))}</div>` : ''}</div></div><div style="text-align:right;margin-top:6px"><button class="btn btn-danger btn-xs" onclick="delSnap('${s.id}')">Delete</button></div></div>`; }).join('')
-        : '<div class="empty"><div class="ei2">⊡</div><div class="et">No snapshots yet</div><button class="btn btn-primary btn-sm" onclick="takeSnap()">Take First Snapshot</button></div>';
+    const snapsEl = document.getElementById('w-nw-snaps');
+    if (snapsEl) {
+        snapsEl.innerHTML = sorted.length
+            ? sorted.map((s, i) => { 
+                const prev = sorted[i + 1]; 
+                const diff = prev ? s.netWorth - prev.netWorth : null; 
+                return `<div class="snap-card">
+                    <div class="snap-card-top">
+                        <div>
+                            <div class="snap-card-date">${new Date(s.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                            <div class="snap-card-sub">${s.assetCount || 0} assets · ${fmt(s.totalAssets || 0)}</div>
+                        </div>
+                        <div>
+                            <div class="snap-card-nw ${s.netWorth >= 0 ? 'tgn' : 'trd'}">${fmt(s.netWorth)}</div>
+                            ${diff != null ? `<div style="font-size:10px;color:${diff >= 0 ? 'var(--gn)' : 'var(--rd)'}">${diff >= 0 ? '▲ +' : '▼ '}${fmt(Math.abs(diff))}</div>` : ''}
+                        </div>
+                    </div>
+                    <div style="text-align:right;margin-top:6px"><button class="btn btn-danger btn-xs" onclick="delSnap('${s.id}')">Delete</button></div>
+                </div>`; 
+            }).join('')
+            : '<div class="empty"><div class="ei2">⊡</div><div class="et">No snapshots yet</div><button class="btn btn-primary btn-sm" onclick="takeSnap()">Take First Snapshot</button></div>';
+    }
 }
 
 function renderWealthNWChart() {

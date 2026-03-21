@@ -16,7 +16,14 @@ To fix the **Access blocked: This app’s request is invalid** error, follow the
 4.  **Add Authorized Redirect URI**  
     Scroll down to the **Authorized redirect URIs** section.
 
-    Click **ADD URI** and paste this exact address:
+    Click **ADD URI** and paste these addresses:
+    
+    **For Production (Render):**
+    ```text
+    https://ui-finance-latest.onrender.com/api/auth/google/callback
+    ```
+
+    **For Development (Local):**
     ```text
     http://localhost:5000/api/auth/google/callback
     ```

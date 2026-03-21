@@ -16,8 +16,9 @@ COPY . .
 # Create the instance directory if it doesn't exist (for SQLite)
 RUN mkdir -p instance
 
-# Make port 5000 available to the world outside this container
-EXPOSE 5000
+# Make port 10000 available (Render's default, but $PORT will override)
+EXPOSE 10000
 
-# Run app.py when the container launches
-CMD ["python", "app.py"]
+# Run the application using gunicorn for production stability
+# We use the shell form to allow environment variable expansion for $PORT
+CMD gunicorn --bind 0.0.0.0:${PORT:-10000} app:app

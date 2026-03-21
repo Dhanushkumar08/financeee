@@ -2,6 +2,7 @@ from flask import Flask, session, request, jsonify, render_template, redirect, u
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 from functools import wraps
 from datetime import datetime
 from authlib.integrations.flask_client import OAuth
@@ -12,6 +13,8 @@ import yfinance as yf
 import requests
 
 app = Flask(__name__)
+# Secure proxy middleware for Render/Cloud (ensures https redirects)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///fintrack.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'fintrack_secret_key_2026_change_in_prod')
@@ -796,4 +799,5 @@ if __name__ == '__main__':
             conn.close()
         except Exception as e:
             app.logger.warning(f"Migration warning: {e}")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
