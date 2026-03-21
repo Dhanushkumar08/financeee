@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+      - ./instance:/app/instance
+    environment:
+      - FLASK_ENV=development
+      - SECRET_KEY=fintrack_secret_key_docker
+      - GOOGLE_CLIENT_ID=640905132414-mkmm4l4tvl6tnuj4a599cr5j3iigdosp.apps.googleusercontent.com
+      - GOOGLE_CLIENT_SECRET=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
+    restart: always

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fintrack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fintrack
+  template:
+    metadata:
+      labels:
+        app: fintrack
+    spec:
+      containers:
+      - name: fintrack
+        image: your-docker-registry/fintrack:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: fintrack-secrets
+              key: SECRET_KEY
+        - name: DATABASE_URL
+          value: "sqlite:////app/instance/fintrack.db"
+        - name: GOOGLE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: fintrack-secrets
+              key: GOOGLE_CLIENT_ID
+        - name: GOOGLE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: fintrack-secrets
+              key: GOOGLE_CLIENT_SECRET
+        volumeMounts:
+        - name: db-storage
+          mountPath: /app/instance
+      volumes:
+      - name: db-storage
+        persistentVolumeClaim:
+          claimName: fintrack-pvc
