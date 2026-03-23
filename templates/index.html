@@ -10,7 +10,7 @@
     rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=1.0.2">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=1.0.3">
 </head>
 
 <body>
@@ -24,6 +24,7 @@
       <div class="ni" onclick="go('cashflow')"><span class="ic">💸</span><span>Money</span></div>
       <div class="ni" onclick="go('plan')"><span class="ic">🎯</span><span>Plan</span></div>
       <div class="ni" onclick="go('more')"><span class="ic">☰</span><span>More</span></div>
+      <!-- <div class="ni" id="ni-admin" onclick="go('admin')" style="display:none;"><span class="ic">🛡️</span><span>Admin Console</span></div> -->
       <!-- <div class="ni" onclick="go('settings')"><span class="ic">⚙</span><span>Settings</span></div> -->
     </nav>
 
@@ -39,6 +40,7 @@
   <main class="main">
     <div class="topbar">
       <div class="topbar-l">
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
         <div class="topbar-title" id="ptitle">overview</div>
         <div class="sw">
           <span class="sico">🔍</span>
@@ -62,6 +64,7 @@
             <div class="tp-dd-email">Personal Account</div>
           </div>
           <div class="tp-dd-sep"></div>
+          <div class="tp-dd-item" id="dd-admin" style="display:{{ 'block' if session.get('is_admin') else 'none' }};" onclick="go('admin');closeProfileMenu()">🛡 Admin Console</div>
           <div class="tp-dd-item" onclick="go('settings');closeProfileMenu()">⚙ Profile & Settings</div>
           <div class="tp-dd-item" onclick="toggleTheme();closeProfileMenu()">🌙 Toggle Theme</div>
           <div class="tp-dd-sep"></div>
@@ -1598,6 +1601,60 @@
         </main>
       </div>
     </div>
+
+    <!-- === ADMIN CONSOLE PAGE === -->
+    <div class="page" id="page-admin">
+      <div class="g3 mb16">
+            <div class="stat-fb">
+              <div class="stat-fb-icon">👥</div>
+              <div>
+                <div class="sl">TOTAL USERS</div>
+                <div class="sv" id="adm-total-users">0</div>
+                <div class="ss">Platform Growth</div>
+              </div>
+            </div>
+            <div class="stat-fb">
+              <div class="stat-fb-icon">🏦</div>
+              <div>
+                <div class="sl">TOTAL ASSETS</div>
+                <div class="sv tgn" id="adm-total-assets">₹0</div>
+                <div class="ss">User Aggregates</div>
+              </div>
+            </div>
+            <div class="stat-fb">
+              <div class="stat-fb-icon">💳</div>
+              <div>
+                <div class="sl">TOTAL LIABILITIES</div>
+                <div class="sv trd" id="adm-total-liabilities">₹0</div>
+                <div class="ss">Total Debt</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="fb mb12">
+              <div class="ct" style="margin:0">User Management Console</div>
+              <button class="btn btn-ghost btn-sm" onclick="renderAdmin()">🔄 Refresh Data</button>
+            </div>
+            <div style="overflow-x:auto;">
+              <table class="w100" style="border-collapse:collapse;font-size:12px;">
+                <thead style="background:var(--bg3);color:var(--text3);font-size:10px;text-transform:uppercase;">
+                  <tr>
+                    <th style="padding:12px;text-align:left;">Member</th>
+                    <th style="padding:12px;text-align:left;">Status</th>
+                    <th style="padding:12px;text-align:right;">Assets (₹)</th>
+                    <th style="padding:12px;text-align:right;">Liabs (₹)</th>
+                    <th style="padding:12px;text-align:right;">Net Worth (₹)</th>
+                    <th style="padding:12px;text-align:center;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="adm-user-list"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
   </main>
 
   <!-- MODALS (Ported from original) -->
@@ -1962,7 +2019,8 @@
   </div>
 
   <div id="toast"></div>
-  <script src="{{ url_for('static', filename='js/app.js') }}?v=1.0.3"></script>
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+  <script src="{{ url_for('static', filename='js/app.js') }}?v=1.0.7"></script>
 </body>
 
 </html>

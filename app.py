@@ -45,6 +45,33 @@ def login_required(f):
 def current_user_id():
     return session.get('user_id')
 
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user_id' not in session:
+            return jsonify({'status': 'error', 'message': 'Not authenticated'}), 401
+        user = User.query.get(session.get('user_id'))
+        if not user or not user.is_admin:
+            return jsonify({'status': 'error', 'message': 'Admin access required'}), 403
+        return f(*args, **kwargs)
+    return decorated
+
+@app.route('/api/test/admin-login')
+def test_admin_login():
+    # Attempt to find the primary user and force log them in as admin
+    user = User.query.filter_by(email='dhanush13404418@gmail.com').first()
+    if user:
+        user.is_admin = True
+        db.session.commit()
+        session['user_id'] = user.id
+        session['username'] = user.username
+        session['display_name'] = user.display_name or user.username
+        session['profile_picture'] = user.profile_picture
+        session['is_admin'] = True
+        return redirect('/')
+    return "User 'dhanush13404418@gmail.com' not found in database.", 404
+
 # --- Models ---
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -54,6 +81,7 @@ class User(db.Model):
     display_name = db.Column(db.String(100))
     profile_picture = db.Column(db.String(255))
     google_picture = db.Column(db.String(255))
+    is_admin = db.Column(db.Boolean, default=False)
     created = db.Column(db.DateTime, default=datetime.utcnow)
 
     def set_password(self, pw):
@@ -320,6 +348,7 @@ def google_callback():
         session['username'] = user.username
         session['display_name'] = user.display_name or user.username
         session['profile_picture'] = user.profile_picture
+        session['is_admin'] = bool(user.is_admin)
         return redirect('/')
     except Exception as e:
         app.logger.error(f'Google OAuth error: {e}')
@@ -368,7 +397,41 @@ def login():
     session['user_id'] = user.id
     session['username'] = user.username
     session['display_name'] = user.display_name or user.username
+    session['is_admin'] = bool(user.is_admin)
     return jsonify({'status': 'success', 'username': user.username, 'displayName': user.display_name})
+
+# ─── ADMIN API ────────────────────────────────
+@app.route('/api/admin/users')
+@admin_required
+def admin_users():
+    print("DEBUG: /api/admin/users called")
+    try:
+        users = User.query.all()
+        print(f"DEBUG: Found {len(users)} users")
+        data = []
+        for u in users:
+            # Calculate totals
+            assets = Asset.query.filter_by(user_id=u.id).all()
+            liabs = Liability.query.filter_by(user_id=u.id).all()
+            ta = sum(a.value for a in assets)
+            tl = sum(l.amount for l in liabs)
+            
+            data.append({
+                'id': u.id,
+                'username': u.username,
+                'email': u.email,
+                'displayName': u.display_name,
+                'isAdmin': u.is_admin,
+                'totalAssets': ta,
+                'totalLiabilities': tl,
+                'netWorth': ta - tl,
+                'created': u.created.isoformat() if u.created else None,
+                'profilePicture': u.profile_picture or u.google_picture
+            })
+        return jsonify(data)
+    except Exception as e:
+        print(f"DEBUG: /api/admin/users ERROR: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/api/auth/logout', methods=['POST'])
 def logout():
@@ -382,7 +445,7 @@ def auth_me():
     user = User.query.get(session['user_id'])
     if not user:
         return jsonify({'loggedIn': False}), 200
-    return jsonify({'loggedIn': True, 'username': user.username, 'displayName': user.display_name, 'email': user.email or '', 'profilePicture': user.profile_picture, 'googlePicture': user.google_picture})
+    return jsonify({'loggedIn': True, 'username': user.username, 'displayName': user.display_name, 'email': user.email or '', 'profilePicture': user.profile_picture, 'googlePicture': user.google_picture, 'isAdmin': user.is_admin})
 
 @app.route('/api/auth/update-profile', methods=['POST'])
 @login_required
@@ -778,26 +841,4 @@ def sync_assets_prices():
     return jsonify({'status': 'success', 'updated': updated, 'errors': errors})
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-        # Safe migration: add new Liability columns if they don't exist (SQLite)
-        import sqlite3
-        db_path = app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
-        try:
-            conn = sqlite3.connect(db_path)
-            cur = conn.cursor()
-            migrations = [
-                "ALTER TABLE liability ADD COLUMN loan_start_date VARCHAR(50)",
-                "ALTER TABLE liability ADD COLUMN original_principal FLOAT DEFAULT 0.0",
-            ]
-            for sql in migrations:
-                try:
-                    cur.execute(sql)
-                    conn.commit()
-                except sqlite3.OperationalError:
-                    pass  # Column already exists
-            conn.close()
-        except Exception as e:
-            app.logger.warning(f"Migration warning: {e}")
-    port = int(os.environ.get('PORT', 5000))
-    app.run(debug=False, host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=5000, debug=True)

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Financeee — Elite Wealth OS</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --primary: #00ffaa;
+            --primary-dim: rgba(0, 255, 170, 0.15);
+            --bg: #04070a;
+            --card-bg: rgba(10, 15, 20, 0.6);
+            --text-main: #f1f5f9;
+            --text-dim: #64748b;
+            --accent: #38bdf8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        body {
+            min-height: 100vh;
+            background-color: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: var(--text-main);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .mesh-container {
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            background: radial-gradient(circle at 50% 50%, #0c121d 0%, #04070a 100%);
+        }
+
+        .glow-orb {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.15;
+            z-index: -1;
+            animation: move 25s infinite alternate;
+        }
+
+        .orb-1 {
+            background: var(--primary);
+            top: -200px;
+            left: -100px;
+        }
+
+        .orb-2 {
+            background: var(--accent);
+            bottom: -200px;
+            right: -100px;
+            animation-delay: -5s;
+        }
+
+        @keyframes move {
+            from {
+                transform: translate(0, 0) scale(1);
+            }
+
+            to {
+                transform: translate(100px, 150px) scale(1.2);
+            }
+        }
+
+        .shards {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .shard {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 2px solid var(--primary);
+            padding: 10px 15px;
+            backdrop-filter: blur(10px);
+            border-radius: 4px 12px 12px 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .s1 {
+            top: 10%;
+            left: 15%;
+            transform: rotate(-5deg);
+            border-left-color: var(--accent);
+        }
+
+        .s2 {
+            top: 70%;
+            left: 8%;
+            transform: rotate(10deg);
+        }
+
+        .s3 {
+            top: 20%;
+            right: 10%;
+            transform: rotate(5deg);
+        }
+
+        .s4 {
+            bottom: 15%;
+            right: 15%;
+            transform: rotate(-8deg);
+            border-left-color: var(--accent);
+        }
+
+        .card {
+            width: 100%;
+            max-width: 440px;
+            background: var(--card-bg);
+            backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 40px;
+            padding: 50px;
+            box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.7);
+            position: relative;
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo-area h1 {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -2px;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-area span {
+            font-size: 12px;
+            color: var(--primary);
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .input-box {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .input-box label {
+            display: block;
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .input-box input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            padding: 16px 20px;
+            border-radius: 16px;
+            color: #fff;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .input-box input:focus {
+            border-color: var(--primary);
+            background: rgba(0, 255, 170, 0.03);
+            box-shadow: 0 0 20px rgba(0, 255, 170, 0.1);
+        }
+
+        .btn-glow {
+            width: 100%;
+            padding: 18px;
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 18px;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.4s;
+            margin-top: 10px;
+        }
+
+        .btn-glow:hover {
+            background: var(--primary);
+            box-shadow: 0 0 30px var(--primary-dim);
+            transform: scale(1.02);
+        }
+
+        .btn-glow:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 30px 0;
+            color: var(--text-dim);
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .toggle-mode {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .toggle-mode a {
+            color: var(--primary);
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .toggle-mode a:hover {
+            text-decoration: underline;
+        }
+
+        .error-msg {
+            background: rgba(248, 113, 113, 0.1);
+            border: 1px solid rgba(248, 113, 113, 0.3);
+            color: #f87171;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-msg.show {
+            display: block;
+        }
+
+        .success-msg {
+            background: rgba(0, 255, 170, 0.08);
+            border: 1px solid rgba(0, 255, 170, 0.2);
+            color: var(--primary);
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .success-msg.show {
+            display: block;
+        }
+
+        /* Register-only field (hidden by default) */
+        .register-field {
+            display: none;
+        }
+
+        .register-field.show {
+            display: block;
+        }
+
+        /* Google Button */
+        .btn-google {
+            width: 100%;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            border-radius: 18px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            text-decoration: none;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-google:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-google svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="mesh-container">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+    </div>
+
+    <div class="shards">
+        <div class="shard s1">BTC <span style="color:var(--primary)">+4.21%</span></div>
+        <div class="shard s2">DASHBOARD_V2.0 // <span style="color:var(--accent)">ACTIVE</span></div>
+        <div class="shard s3">LIQUID_ASSETS: <span style="color:#fff">$240K</span></div>
+        <div class="shard s4">ENCRYPTION: <span style="color:var(--primary)">AES_256</span></div>
+    </div>
+
+    <div class="card">
+        <div class="logo-area">
+            <span id="mode-label">Encrypted Access</span>
+            <h1>Finance<span>ee</span> — Personal Wealth OS</h1>
+        </div>
+
+        <div class="error-msg" id="error-msg"></div>
+        <div class="success-msg" id="success-msg"></div>
+
+        <form id="auth-form" onsubmit="handleAuth(event)">
+            <div class="input-box register-field" id="display-name-box">
+                <label>Display Name</label>
+                <input type="text" id="display-name" placeholder="Your Name" />
+            </div>
+
+            <div class="input-box">
+                <label>System Identity</label>
+                <input type="text" id="username" placeholder="Username" required />
+            </div>
+
+            <div class="input-box">
+                <label>Access Key</label>
+                <input type="password" id="password" placeholder="••••••••" required />
+            </div>
+
+            <button type="submit" class="btn-glow" id="submit-btn">INITIALIZE SESSION</button>
+        </form>
+
+        <div class="toggle-mode" id="toggle-mode">
+            Don't have an account? <a onclick="toggleMode()">Create one</a>
+        </div>
+
+        <div class="divider">OR CONTINUE WITH</div>
+
+        <a href="/api/auth/google" class="btn-google" id="btn-google">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    fill="#4285F4" />
+                <path
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    fill="#34A853" />
+                <path
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
+                    fill="#FBBC05" />
+                <path
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    fill="#EA4335" />
+            </svg>
+            Sign in with Google
+        </a>
+    </div>
+
+    <script>
+        // Show Google OAuth error if redirected back with error param
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('error') === 'google_failed') {
+            document.getElementById('error-msg').textContent = 'Google sign-in failed. Please try again.';
+            document.getElementById('error-msg').classList.add('show');
+        }
+
+        let isRegister = false;
+
+        function toggleMode() {
+            isRegister = !isRegister;
+            const dnBox = document.getElementById('display-name-box');
+            const modeLabel = document.getElementById('mode-label');
+            const submitBtn = document.getElementById('submit-btn');
+            const toggleText = document.getElementById('toggle-mode');
+
+            if (isRegister) {
+                dnBox.classList.add('show');
+                modeLabel.textContent = 'Create Account';
+                submitBtn.textContent = 'REGISTER';
+                toggleText.innerHTML = 'Already have an account? <a onclick="toggleMode()">Sign in</a>';
+            } else {
+                dnBox.classList.remove('show');
+                modeLabel.textContent = 'Encrypted Access';
+                submitBtn.textContent = 'INITIALIZE SESSION';
+                toggleText.innerHTML = 'Don\'t have an account? <a onclick="toggleMode()">Create one</a>';
+            }
+            clearMessages();
+        }
+
+        function clearMessages() {
+            document.getElementById('error-msg').classList.remove('show');
+            document.getElementById('success-msg').classList.remove('show');
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('error-msg');
+            el.textContent = msg;
+            el.classList.add('show');
+            document.getElementById('success-msg').classList.remove('show');
+        }
+
+        function showSuccess(msg) {
+            const el = document.getElementById('success-msg');
+            el.textContent = msg;
+            el.classList.add('show');
+            document.getElementById('error-msg').classList.remove('show');
+        }
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            clearMessages();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('submit-btn');
+
+            if (!username || !password) {
+                showError('Username and password are required.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'AUTHENTICATING...';
+
+            try {
+                if (isRegister) {
+                    const displayName = document.getElementById('display-name').value.trim() || username;
+                    const res = await fetch('/api/auth/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password, displayName }),
+                        credentials: 'include'
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        showSuccess('Account created! Redirecting...');
+                        setTimeout(() => { window.location.href = '/'; }, 800);
+                    } else {
+                        showError(data.message || 'Registration failed.');
+                        btn.disabled = false;
+                        btn.textContent = 'REGISTER';
+                    }
+                } else {
+                    const res = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password }),
+                        credentials: 'include'
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        showSuccess('Access granted. Redirecting...');
+                        setTimeout(() => { window.location.href = '/'; }, 600);
+                    } else {
+                        showError(data.message || 'Invalid credentials.');
+                        btn.disabled = false;
+                        btn.textContent = 'INITIALIZE SESSION';
+                    }
+                }
+            } catch (err) {
+                showError('Network error. Please try again.');
+                btn.disabled = false;
+                btn.textContent = isRegister ? 'REGISTER' : 'INITIALIZE SESSION';
+            }
+        }
+    </script>
+
+</body>
+
+</html>

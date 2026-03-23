@@ -3,7 +3,8 @@ const API = {
     async getDB() { const r = await fetch('/api/db', { credentials: 'include' }); if (r.status === 401) { window.location = '/login'; throw new Error('Not authenticated'); } return r.json(); },
     async post(url, data) { return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(data) }); },
     async put(url, data) { return fetch(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(data) }); },
-    async del(url) { return fetch(url, { method: 'DELETE', credentials: 'include' }); }
+    async del(url) { return fetch(url, { method: 'DELETE', credentials: 'include' }); },
+    async fetchAdminUsers() { const r = await fetch('/api/admin/users', { credentials: 'include' }); return r.json(); }
 };
 
 // ─── DB & STATE ──────────────────────────────────
@@ -36,6 +37,18 @@ async function loadDB() {
             });
             const ddn = document.getElementById('tp-dd-name');
             if (ddn) ddn.textContent = dn;
+            
+            // Show Admin Dropdown item if admin
+            console.log("DEBUG: User logged in, isAdmin:", data.isAdmin);
+            if (data.isAdmin) {
+                const ddAdmin = document.getElementById('dd-admin');
+                if (ddAdmin) {
+                    console.log("DEBUG: Found dd-admin, showing it");
+                    ddAdmin.style.display = 'block';
+                } else {
+                    console.log("DEBUG: dd-admin NOT found in DOM!");
+                }
+            }
         }
     } catch (e) { console.warn("Failed to fetch user info", e); }
 
@@ -153,7 +166,7 @@ document.addEventListener('click', function (e) {
 });
 
 // ─── NAVIGATION ───────────────────────────
-const PTITLES = { dashboard: 'Dashboard', wealth: 'Wealth', cashflow: 'Cash Flow', plan: 'Plan', more: 'More', settings: 'Settings' };
+const PTITLES = { dashboard: 'Dashboard', wealth: 'Wealth', cashflow: 'Cash Flow', plan: 'Plan', more: 'More', settings: 'Settings', admin: 'Admin Console' };
 const PACTIONS = {
     assets: `<button id="btn-sync-prices" class="btn btn-ghost btn-sm" onclick="syncPrices()" style="margin-right:6px">🔄 Refresh Prices</button><button class="btn btn-ghost btn-sm" onclick="triggerImport('assets')" style="margin-right:6px">⬆ Import CSV</button><button class="btn btn-primary btn-sm" onclick="openModal('ov-asset');resetModal('asset')">+ Add Asset</button>`,
     liabilities: `<button class="btn btn-primary btn-sm" onclick="openModal('ov-liab');resetModal('liab')">+ Add Liability</button>`,
@@ -161,10 +174,26 @@ const PACTIONS = {
     expenses: `<button class="btn btn-ghost btn-sm" onclick="triggerImport('expenses')" style="margin-right:6px">⬆ Import CSV</button><button class="btn btn-primary btn-sm" onclick="openModal('ov-exp');resetModal('exp')">+ Add Expense</button>`,
     goals: `<button class="btn btn-primary btn-sm" onclick="openModal('ov-goal');resetModal('goal')">+ New Goal</button>`,
     bills: `<button class="btn btn-primary btn-sm" onclick="openModal('ov-bill');resetModal('bill')">+ Add Bill</button>`,
-    networth: `<button class="btn btn-primary btn-sm" onclick="takeSnap()">📸 Take Snapshot</button>`
+    networth: `<button class="btn btn-primary btn-sm" onclick="takeSnap()">📸 Take Snapshot</button>`,
+    admin: `<button class="btn btn-ghost btn-sm" onclick="renderAdmin()">🔄 Refresh Data</button>`
 };
 
+function toggleSidebar() {
+    const sb = document.querySelector('.sidebar');
+    const ov = document.getElementById('sidebar-overlay');
+    if (sb) sb.classList.toggle('show');
+    if (ov) ov.classList.toggle('active');
+}
+
+function closeSidebar() {
+    const sb = document.querySelector('.sidebar');
+    const ov = document.getElementById('sidebar-overlay');
+    if (sb) sb.classList.remove('show');
+    if (ov) ov.classList.remove('active');
+}
+
 function go(p) {
+    closeSidebar();
     document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
     document.querySelectorAll('.ni').forEach(x => x.classList.remove('active'));
     const pg = document.getElementById('page-' + p);
@@ -176,7 +205,7 @@ function go(p) {
     curPage = p; renderPage(p);
 }
 
-function renderPage(p) { ({ dashboard: renderDash, wealth: renderWealth, cashflow: renderCashflow, plan: renderPlan, more: renderMore, settings: renderSett })[p]?.(); }
+function renderPage(p) { ({ dashboard: renderDash, wealth: renderWealth, cashflow: renderCashflow, plan: renderPlan, more: renderMore, settings: renderSett, admin: renderAdmin })[p]?.(); }
 
 // ─── TAB CONTROLLERS ───────────────────────
 let cfCurTab = 'income';
@@ -1324,6 +1353,49 @@ async function takeSnap() { const snap = { id: uid(), date: Date.now(), netWorth
 async function delSnap(id) { if (confirm('Delete snap?')) { await API.del(`/api/snapshots/${id}`); await loadDB(); toast('Deleted'); } }
 
 // ─── SETTINGS ─────────────────────────────
+function renderAdmin() {
+    console.log("renderAdmin called");
+    API.fetchAdminUsers().then(users => {
+        console.log("Admin users fetched:", users);
+        let h = '';
+        let ta = 0, tl = 0;
+        users.forEach(u => {
+            ta += u.totalAssets || 0;
+            tl += u.totalLiabilities || 0;
+            const nw = u.netWorth || 0;
+            const pic = u.profilePicture || '';
+            const avatar = pic ? `<img src="${pic}" style="width:24px;height:24px;border-radius:50%;margin-right:8px;object-fit:cover;">` : `<div class="tp-avatar" style="width:24px;height:24px;font-size:10px;margin-right:8px;display:flex;align-items:center;justify-content:center;background:var(--bg3);border-radius:50%;">${(u.displayName||u.username||'?')[0].toUpperCase()}</div>`;
+            
+            h += `<tr>
+                <td style="padding:12px;display:flex;align-items:center;border-bottom:1px solid var(--border);">
+                    ${avatar}
+                    <div>
+                        <div style="font-weight:600;color:var(--text1)">${u.displayName || u.username}</div>
+                        <div style="font-size:10px;color:var(--text3)">@${u.username}</div>
+                    </div>
+                </td>
+                <td style="padding:12px;border-bottom:1px solid var(--border);">
+                    <div style="font-size:11px;">${u.email || '<span style="color:var(--text3)">No Email</span>'}</div>
+                    <div style="margin-top:4px;">${u.isAdmin ? '<span class="bdg gn" style="font-size:9px;">Admin</span>' : '<span class="bdg bg" style="font-size:9px;">User</span>'}</div>
+                </td>
+                <td style="padding:12px;text-align:right;font-family:'DM Mono',monospace;border-bottom:1px solid var(--border);">${fmt(u.totalAssets)}</td>
+                <td style="padding:12px;text-align:right;font-family:'DM Mono',monospace;border-bottom:1px solid var(--border);">${fmt(u.totalLiabilities)}</td>
+                <td style="padding:12px;text-align:right;font-weight:700;color:${nw>=0?'var(--gn)':'var(--rd)'};font-family:'DM Mono',monospace;border-bottom:1px solid var(--border);">${fmt(nw)}</td>
+                <td style="padding:12px;text-align:center;border-bottom:1px solid var(--border);">
+                    <button class="btn btn-ghost btn-sm" onclick="alert('User: ${u.username}')" style="padding:2px 8px;font-size:10px;">Details</button>
+                </td>
+            </tr>`;
+        });
+        document.getElementById('adm-user-list').innerHTML = h || '<tr><td colspan="6" class="empty">No users found</td></tr>';
+        document.getElementById('adm-total-users').textContent = users.length;
+        document.getElementById('adm-total-assets').textContent = fmt(ta);
+        document.getElementById('adm-total-liabilities').textContent = fmt(tl);
+    }).catch(err => {
+        console.error("Admin fetch failed", err);
+        toast("Admin access denied or server error", "error");
+    });
+}
+
 function renderSett() {
     const s = db.settings || {};
     document.getElementById('s-inc').value = s.annualIncome || 0;
