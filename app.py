@@ -778,13 +778,45 @@ def clear_all():
 @app.route('/api/auth/fx-rates', methods=['GET'])
 @login_required
 def get_fx_rates():
+    global _cached_rates
+    from datetime import datetime
     import requests
+    import yfinance as yf
+    
+    # Cache the broad rates for 1 hour
+    if '_cached_rates' not in globals() or (datetime.utcnow() - _cached_rates.get('time', datetime.min)).total_seconds() > 3600:
+        try:
+            r = requests.get('https://api.exchangerate-api.com/v4/latest/INR', timeout=5)
+            _cached_rates = r.json()
+            _cached_rates['time'] = datetime.utcnow()
+        except Exception as e:
+            if '_cached_rates' not in globals():
+                return jsonify({'error': str(e)}), 500
+
+    res = _cached_rates.copy()
+    # Live update major pairs via yfinance
+    pairs = ['USD', 'EUR', 'GBP', 'AED', 'SGD', 'JPY', 'CAD', 'AUD']
+    symbols = [f"{p}INR=X" for p in pairs]
     try:
-        # Fetching latest rates with INR as base
-        r = requests.get('https://api.exchangerate-api.com/v4/latest/INR', timeout=5)
-        return jsonify(r.json())
+        data = yf.download(symbols, period='1d', interval='1m', progress=False)
+        for p in pairs:
+            sym = f"{p}INR=X"
+            if len(pairs) > 1:
+                # Multi-index check
+                if ('Close', sym) in data.columns:
+                    val = data['Close'][sym].dropna()
+                    if not val.empty:
+                        res['rates'][p] = 1.0 / float(val.iloc[-1])
+            else:
+                if 'Close' in data.columns:
+                    val = data['Close'].dropna()
+                    if not val.empty:
+                        res['rates'][p] = 1.0 / float(val.iloc[-1])
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.warning(f"Live FX update failed: {e}")
+
+    return jsonify(res)
+
 
 @app.route('/api/apply-recurring', methods=['POST'])
 @login_required

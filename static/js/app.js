@@ -2749,7 +2749,7 @@ async function applyRecurring() {
 window.onload = () => {
     loadDB();
     fetchFXRates();
-    setInterval(fetchFXRates, 60000); // Sync every minute
+    setInterval(fetchFXRates, 2000); // High frequency sync (2s)
 };
 
 
